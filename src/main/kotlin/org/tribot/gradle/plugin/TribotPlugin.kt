@@ -24,6 +24,8 @@ class TribotPlugin : Plugin<Project> {
 
     private fun applyRoot(project: Project) {
 
+        val outputDir = getTribotDirectory().resolve("bin")
+
         project.allprojects.forEach {
 
             it.pluginManager.apply("java")
@@ -40,25 +42,36 @@ class TribotPlugin : Plugin<Project> {
 
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:0.0.42")
 
-            val outputDir = getTribotDirectory().resolve("bin")
-
             val sourceSets = it.properties["sourceSets"] as SourceSetContainer
             val main = sourceSets.getByName("main")
 
             main.java.setSrcDirs(listOf("src"))
-            main.java.outputDir = outputDir
             main.resources.setSrcDirs(listOf("src"))
             main.resources.exclude("**/*.java", "**/*.kt")
-            main.output.resourcesDir = outputDir
 
             it.tasks.getAt("clean").doFirst {
                 outputDir.listFiles()?.forEach { it.deleteRecursively() }
             }
 
+            // Gradle doesn't like multiple projects pointing to the same output location, so copy the files we need
+            it.tasks.getAt("classes").doLast { _ ->
+                val copy = {f : File ->
+                    f.walkTopDown()
+                    .filter { it.isDirectory && it.absolutePath.endsWith("scripts") }
+                    .forEach {
+                        it.walkTopDown().filter { !it.isDirectory }.forEach { classFile ->
+                            val outputFile = File(classFile.absolutePath.replace(it.absolutePath, outputDir.absolutePath))
+                            classFile.copyTo(outputFile, true)
+                        }
+                    }
+                }
+                copy(it.buildDir.resolve("classes"))
+                copy(it.buildDir.resolve("resources"))
+            }
+
             val kotlinCompile = it.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java)
             kotlinCompile.forEach {
                 it.kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
-                it.destinationDir = outputDir
             }
 
             it.configurations.all {
