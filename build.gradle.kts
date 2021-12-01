@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.tribot"
-version = "0.0.1"
+version = project.version
 
 repositories {
     mavenCentral()
