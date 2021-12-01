@@ -44,7 +44,7 @@ publishing {
             name = "GitLab"
             url = uri("https://gitlab.com/api/v4/projects/22245399/packages/maven")
             credentials(HttpHeaderCredentials::class.java) {
-                name = "Private-Token"
+                name = "Deploy-Token"
                 value = if (project.hasProperty("tribotDeployToken"))
                     project.property("tribotDeployToken") as String
                 else ""
