@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.tribot"
-version = "1.0.0"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -45,7 +45,9 @@ publishing {
             url = uri("https://gitlab.com/api/v4/projects/22245399/packages/maven")
             credentials(HttpHeaderCredentials::class.java) {
                 name = "Private-Token"
-                value = System.getProperty("GITLAB_KEY")
+                value = if (project.hasProperty("tribotDeployToken"))
+                    project.property("tribotDeployToken") as String
+                else ""
             }
             authentication {
                 create<HttpHeaderAuthentication>("header")

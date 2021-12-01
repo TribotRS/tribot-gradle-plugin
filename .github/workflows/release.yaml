@@ -1,0 +1,14 @@
+name: Release Gradle Plugin
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v2
+      - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-11
+        with:
+          args: publish -PtribotDeployToken=${{ secrets.GitlabKey }} -Pversion=${{ github.event.release.tag_name }}

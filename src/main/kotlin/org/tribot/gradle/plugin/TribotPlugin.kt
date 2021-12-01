@@ -40,7 +40,9 @@ class TribotPlugin : Plugin<Project> {
                 it.setUrl("https://maven.pkg.jetbrains.space/public/p/compose/dev")
             })
 
-            it.dependencies.add("api", "org.tribot:tribot-script-sdk:0.0.42")
+            it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
+
+            it.dependencies.add("api", it.files("${it.projectDir.absolutePath}/allatori-annotations-7.5.jar"))
 
             val sourceSets = it.properties["sourceSets"] as SourceSetContainer
             val main = sourceSets.getByName("main")
