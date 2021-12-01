@@ -11,4 +11,4 @@ jobs:
         uses: actions/checkout@v2
       - uses: OrangeLabs-moe/gradle-actions@v5.0-openjdk-11
         with:
-          args: publish -PtribotDeployToken=${{ secrets.GitlabKey }} -Pversion=${{ github.event.release.tag_name }}
+          args: publish -PtribotDeployToken=${{ secrets.GITLAB_KEY }} -Pversion=${{ github.event.release.tag_name }}
