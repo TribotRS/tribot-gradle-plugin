@@ -42,7 +42,7 @@ publishing {
     repositories {
         maven {
             name = "GitLab"
-            url = uri("https://gitlab.com/api/v4/projects/22245399/packages/maven")
+            url = uri("https://gitlab.com/api/v4/projects/20741387/packages/maven")
             credentials(HttpHeaderCredentials::class.java) {
                 name = "Deploy-Token"
                 value = if (project.hasProperty("tribotDeployToken"))
