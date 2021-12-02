@@ -7,6 +7,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSetContainer
 import org.openjfx.gradle.JavaFXOptions
 import java.io.File
@@ -30,6 +31,10 @@ class TribotPlugin : Plugin<Project> {
 
             it.pluginManager.apply("java")
             it.pluginManager.apply("kotlin")
+
+            val javaPlugin = (it.plugins.getPlugin("java") as JavaPluginExtension)
+            javaPlugin.sourceCompatibility = JavaVersion.VERSION_11
+            javaPlugin.targetCompatibility = JavaVersion.VERSION_11
 
             it.repositories.add(it.repositories.mavenCentral())
             it.repositories.add(it.repositories.maven {
