@@ -29,33 +29,16 @@ tasks.withType<KotlinCompile> {
 
 gradlePlugin {
     plugins {
-        create("TribotPlugin") {
-            id = "org.tribot.tribot-gradle-plugin"
+        create("Tribot Plugin") {
+            id = "tribot-gradle-plugin"
+            displayName = "Tribot Scripting Gradle Plugin"
             implementationClass = "org.tribot.gradle.plugin.TribotPlugin"
+            description = ("Tribot's official scripting grade plugin")
         }
     }
 }
 
-
 publishing {
-    plugins.withType()
-    publications {
-        val mavenJava by publications.creating(MavenPublication::class) {
-            from(components.getByName("java"))
-            pom {
-                artifactId = "tribot-gradle-plugin"
-                name.set("Tribot Scripting Gradle Plugin")
-                description.set("Tribot's official scripting grade plugin")
-                url.set("https://tribot.org/")
-                licenses {
-                    license {
-                        name.set("TRiBot End-User License Agreement")
-                        url.set("https://tribot.org/pages/eula")
-                    }
-                }
-            }
-        }
-    }
     repositories {
         maven {
             name = "GitLab"

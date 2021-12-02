@@ -43,6 +43,9 @@ class TribotPlugin : Plugin<Project> {
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
 
             it.dependencies.add("api", it.files("${it.projectDir.absolutePath}/allatori-annotations-7.5.jar"))
+            getTribotDirectory().resolve("thirdparty").listFiles()?.forEach { f ->
+                it.dependencies.add("api", it.file(f))
+            }
 
             val sourceSets = it.properties["sourceSets"] as SourceSetContainer
             val main = sourceSets.getByName("main")
