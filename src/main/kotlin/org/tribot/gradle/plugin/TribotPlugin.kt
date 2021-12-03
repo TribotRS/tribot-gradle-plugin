@@ -11,6 +11,7 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSetContainer
 import org.openjfx.gradle.JavaFXOptions
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 class TribotPlugin : Plugin<Project> {
 
@@ -28,6 +29,12 @@ class TribotPlugin : Plugin<Project> {
         val outputDir = getTribotDirectory().resolve("bin")
 
         project.allprojects.forEach {
+
+            it.configurations.all {
+                // Ensures that our dependencies will update timely
+                it.resolutionStrategy.cacheDynamicVersionsFor(5, TimeUnit.MINUTES)
+                it.resolutionStrategy.cacheChangingModulesFor(5, TimeUnit.MINUTES)
+            }
 
             it.pluginManager.apply("java")
             it.pluginManager.apply("kotlin")
@@ -83,12 +90,6 @@ class TribotPlugin : Plugin<Project> {
             val kotlinCompile = it.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java)
             kotlinCompile.forEach {
                 it.kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
-            }
-
-            it.configurations.all {
-                // Ensures that our dependencies will update timely
-                it.resolutionStrategy.cacheDynamicVersionsFor(5, "minutes")
-                it.resolutionStrategy.cacheChangingModulesFor(5, "minutes")
             }
         }
 
