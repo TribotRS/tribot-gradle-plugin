@@ -32,9 +32,10 @@ class TribotPlugin : Plugin<Project> {
             it.pluginManager.apply("java")
             it.pluginManager.apply("kotlin")
 
-            val javaPlugin = (it.plugins.getPlugin("java") as JavaPluginExtension)
-            javaPlugin.sourceCompatibility = JavaVersion.VERSION_11
-            javaPlugin.targetCompatibility = JavaVersion.VERSION_11
+            it.extensions.configure(JavaPluginExtension::class.java) {
+                it.sourceCompatibility = JavaVersion.VERSION_11
+                it.targetCompatibility = JavaVersion.VERSION_11
+            }
 
             it.repositories.add(it.repositories.mavenCentral())
             it.repositories.add(it.repositories.maven {
