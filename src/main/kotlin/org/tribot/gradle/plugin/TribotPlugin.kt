@@ -78,7 +78,8 @@ class TribotPlugin : Plugin<Project> {
                     .filter { it.isDirectory && it.absolutePath.endsWith("scripts") }
                     .forEach {
                         it.walkTopDown().filter { !it.isDirectory }.forEach { classFile ->
-                            val outputFile = File(classFile.absolutePath.replace(it.absolutePath, outputDir.absolutePath))
+                            val outputPathSegment = outputDir.resolve("scripts").absolutePath
+                            val outputFile = File(classFile.absolutePath.replace(it.absolutePath, outputPathSegment))
                             classFile.copyTo(outputFile, true)
                         }
                     }
@@ -122,7 +123,7 @@ class TribotPlugin : Plugin<Project> {
 
         project.tasks.create("repoCopy") { task ->
             task.group = "tribot"
-            project.subprojects.forEach{
+            project.subprojects.forEach {
                 it.tasks.getByName("build").let { task.dependsOn(it) }
             }
             task.doLast {
@@ -137,10 +138,20 @@ class TribotPlugin : Plugin<Project> {
         }
     }
 
+    private fun getRoot(project: Project): Project {
+        var parent = project
+        while (parent.parent != null) {
+            parent = parent.parent!!
+        }
+        return parent
+    }
+
     private fun applyScript(project: Project) {
+        val root = getRoot(project)
         project.tasks.create("repoPackage") { task ->
             task.group = "tribot"
             task.dependsOn(project.tasks.getByName("assemble"))
+            root.tasks.getByName("repoCopy").dependsOn(task)
             task.doLast {
 
                 val projectDir = project.projectDir
