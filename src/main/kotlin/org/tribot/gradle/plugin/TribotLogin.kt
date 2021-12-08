@@ -40,17 +40,20 @@ class TribotLogin {
         val openJfx = getTribotDirectory()
                 .resolve("install")
                 .resolve("openjfx")
-                .resolve("javafx-sdk-15")
+                .resolve("javafx-sdk-15" + (if (System.getProperty("sun.arch.data.model") == "32") "-x86" else ""))
                 .resolve("lib")
         if (!openJfx.exists()) {
             // We could try to resolve through maven or something...
-            throw IllegalStateException("No JavaFX install found. Please run the TRiBot client once to install.")
+            throw IllegalStateException("No JavaFX install found. Please run the TRiBot client once to install." +
+                    " (java arch: ${System.getProperty("sun.arch.data.model")}")
         }
         val process = ProcessBuilder(
                 System.getProperty("java.home") + File.separator + "bin" + File.separator + "java",
                 "--module-path",
                 openJfx.absolutePath,
                 "--add-modules=javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.swing,javafx.media,javafx.web",
+                "-Dprism.verbose=true",
+                "-Djavafx.verbose=true",
                 "org.tribot.gradle.plugin.LoginPrompt",
         )
                 .directory(dir)

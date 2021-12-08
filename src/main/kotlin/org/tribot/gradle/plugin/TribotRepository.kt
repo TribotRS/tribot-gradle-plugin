@@ -44,11 +44,13 @@ class TribotRepository {
                 .post(requestBody)
                 .url("https://repo.tribot.org/script/edit/$id/source/")
                 .build()
+        logger.debug("Updating script id: $id version $version filepath ${script.absolutePath}")
         cl.newCall(request).execute().use {
             if (it.code != 200) {
-                throw IllegalStateException("Failed to update script $id, response code: ${it.code}")
+                throw IllegalStateException("Failed to update script $id, response code: ${it.code}, response body: ${it.body?.string()}")
             }
         }
+        logger.debug("Sent update request")
     }
 
     private fun load(url: String): String {
