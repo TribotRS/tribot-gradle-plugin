@@ -24,6 +24,17 @@ class TribotRepository {
         login.getCookies().forEach {
             authorizedBuilder.addHeader("Cookie", "${it.name}=${it.value}")
         }
+        authorizedBuilder.header("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36")
+        authorizedBuilder.header("Connection", "Keep-Alive")
+        authorizedBuilder.header("Origion", "https://repo.tribot.org")
+        authorizedBuilder.header("upgrade-insecure-requests", "1")
+        authorizedBuilder.header("sec-ch-ua", "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"96\", \"Google Chrome\";v=\"96\"")
+        authorizedBuilder.header("sec-ch-ua-mobile", "?0")
+        authorizedBuilder.header("sec-ch-ua-platform", "\"Windows\"")
+        authorizedBuilder.header("sec-fetch-dest", "document")
+        authorizedBuilder.header("sec-fetch-mode", "navigate")
+        authorizedBuilder.header("sec-fetch-site", "same-origin")
+        authorizedBuilder.header("sec-fetch-user", "?1")
         return@addInterceptor it.proceed(authorizedBuilder.build())
     }.build()
 
