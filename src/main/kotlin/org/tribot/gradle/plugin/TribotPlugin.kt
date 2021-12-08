@@ -57,6 +57,10 @@ class TribotPlugin : Plugin<Project> {
 
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
 
+            if (it.property("includeClient")?.toString().toBoolean()) {
+                it.dependencies.add("api", "org.tribot:tribot-client:+")
+            }
+
             // Add/check allatori - we only check the length to verify integrity before copying, this will be sufficient
             val allatoriOnDisk = getTribotDirectory().resolve("thirdparty").resolve("allatori-annotations-7.5.jar")
             val allatoriResource = javaClass.classLoader.getResourceAsStream("allatori-annotations-7.5.jar")!!.readAllBytes()
@@ -109,13 +113,13 @@ class TribotPlugin : Plugin<Project> {
             kotlinCompile.forEach {
                 it.kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
             }
-        }
 
-        project.pluginManager.apply("org.openjfx.javafxplugin")
-        project.extensions.configure<JavaFXOptions>("javafx") {
-            it.version = "15"
-            it.modules = listOf("javafx.controls", "javafx.fxml",
-                    "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web")
+            it.pluginManager.apply("org.openjfx.javafxplugin")
+            it.extensions.configure<JavaFXOptions>("javafx") {
+                it.version = "15"
+                it.modules = listOf("javafx.controls", "javafx.fxml",
+                        "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web")
+            }
         }
 
         project.tasks.create("runTribotWithDebugger") { task ->
