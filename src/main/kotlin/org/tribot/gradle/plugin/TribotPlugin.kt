@@ -57,7 +57,7 @@ class TribotPlugin : Plugin<Project> {
 
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
 
-            if (it.property("includeClient")?.toString().toBoolean()) {
+            if (it.findProperty("includeClient")?.toString().toBoolean()) {
                 it.dependencies.add("api", "org.tribot:tribot-client:+")
             }
 
