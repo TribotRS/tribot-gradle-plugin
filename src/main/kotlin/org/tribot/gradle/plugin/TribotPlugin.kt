@@ -61,6 +61,7 @@ class TribotPlugin : Plugin<Project> {
             val allatoriOnDisk = getTribotDirectory().resolve("thirdparty").resolve("allatori-annotations-7.5.jar")
             val allatoriResource = javaClass.classLoader.getResourceAsStream("allatori-annotations-7.5.jar")!!.readAllBytes()
             if (!allatoriOnDisk.exists() || allatoriOnDisk.length() != allatoriResource.size.toLong()) {
+                allatoriOnDisk.parentFile.mkdirs()
                 allatoriOnDisk.createNewFile()
                 allatoriOnDisk.writeBytes(allatoriResource)
             }
