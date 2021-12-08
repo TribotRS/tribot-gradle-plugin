@@ -57,7 +57,14 @@ class TribotPlugin : Plugin<Project> {
 
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
 
-            it.dependencies.add("compileOnly", it.files("${it.projectDir.absolutePath}/allatori-annotations-7.5.jar"))
+            // Add/check allatori - we only check the length to verify integrity before copying, this will be sufficient
+            val allatoriOnDisk = getTribotDirectory().resolve("thirdparty").resolve("allatori-annotations-7.5.jar")
+            val allatoriResource = javaClass.classLoader.getResourceAsStream("allatori-annotations-7.5.jar")!!.readAllBytes()
+            if (!allatoriOnDisk.exists() || allatoriOnDisk.length() != allatoriResource.size.toLong()) {
+                allatoriOnDisk.createNewFile()
+                allatoriOnDisk.writeBytes(allatoriResource)
+            }
+
             getTribotDirectory().resolve("thirdparty").listFiles()?.forEach { f ->
                 it.dependencies.add("compileOnly", it.files(f))
             }
