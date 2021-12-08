@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "1.5.31"
     `java-gradle-plugin`
     `maven-publish`
+    id("org.openjfx.javafxplugin") version "0.0.10"
 }
 
 group = "org.tribot"
@@ -21,6 +22,14 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.9")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10")
     implementation("org.openjfx.javafxplugin:org.openjfx.javafxplugin.gradle.plugin:0.0.10")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+}
+
+javafx {
+    version = "15"
+    modules = listOf("javafx.controls", "javafx.fxml",
+            "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web")
+    configuration = "compileOnly" // We need to be able to compile LoginPrompt
 }
 
 tasks.withType<KotlinCompile> {

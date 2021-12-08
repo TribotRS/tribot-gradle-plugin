@@ -11,6 +11,8 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSetContainer
 import org.openjfx.gradle.JavaFXOptions
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
 class TribotPlugin : Plugin<Project> {
@@ -68,7 +70,14 @@ class TribotPlugin : Plugin<Project> {
             main.resources.exclude("**/*.java", "**/*.kt")
 
             it.tasks.getAt("clean").doFirst {
-                outputDir.listFiles()?.forEach { it.deleteRecursively() }
+                outputDir.walkBottomUp().forEach {
+                    try {
+                        Files.delete(it.toPath())
+                    }
+                    catch (e: IOException) {
+                        println("Warning: Failed to delete file ${it.absolutePath}: ${e.message}")
+                    }
+                }
             }
 
             // Gradle doesn't like multiple projects pointing to the same output location, so copy the files we need
@@ -136,6 +145,11 @@ class TribotPlugin : Plugin<Project> {
                         .forEach { it.copyTo(repoDeployDir.resolve(it.name), overwrite = true) }
             }
         }
+
+        project.tasks.create("repoUpdateAll") { task ->
+            task.group = "tribot"
+            // We have all the script repo updates depend on this
+        }
     }
 
     private fun getRoot(project: Project): Project {
@@ -148,7 +162,7 @@ class TribotPlugin : Plugin<Project> {
 
     private fun applyScript(project: Project) {
         val root = getRoot(project)
-        project.tasks.create("repoPackage") { task ->
+        val repoPackage = project.tasks.create("repoPackage") { task ->
             task.group = "tribot"
             task.dependsOn(project.tasks.getByName("assemble"))
             root.tasks.getByName("repoCopy").dependsOn(task)
@@ -185,6 +199,25 @@ class TribotPlugin : Plugin<Project> {
                         }
                     }
                 }
+            }
+        }
+        project.tasks.create("repoUpdate") {
+            it.group = "tribot"
+            it.dependsOn(repoPackage)
+            root.tasks.getByName("repoUpdateAll").dependsOn(it)
+            it.doLast {
+                val localFile = it.project.projectDir
+                        .resolve("build/repo-deploy")
+                        .takeIf { it.exists() }
+                        ?.let { it.listFiles()?.getOrNull(0) }
+                        ?: throw IllegalStateException("Failed to find build script ${project.name}")
+                val tribotScripts = TribotRepository.instance.getScripts()
+                val scripts = project.properties["repoId"]?.toString()?.let {
+                    val ids = it.split(",")
+                    tribotScripts.filter { ids.contains(it.id) }.takeIf { it.isNotEmpty() }
+                }
+                ?: throw IllegalStateException("No existing script found for ${project.name} with repoId ${project.properties["repoId"]}")
+                scripts.forEach { TribotRepository.instance.update(it.id, it.version, localFile) }
             }
         }
     }

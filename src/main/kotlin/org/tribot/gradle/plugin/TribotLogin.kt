@@ -1,0 +1,77 @@
+package org.tribot.gradle.plugin
+
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
+import java.nio.file.Files
+
+
+class TribotLogin {
+
+    private var cookies: String? = null
+
+    fun loginIfNecessary() {
+        if (cookies != null) {
+            return
+        }
+        cookies = login()
+    }
+
+    @Synchronized
+    fun login() : String {
+        // Gradle really doesn't like showing a webview inside the process for some reason - it kept crashing.
+        // So we create a new process to isolate it.
+        val ui = javaClass.classLoader
+                .getResourceAsStream("org/tribot/gradle/plugin/LoginPrompt.class")!!
+                .readAllBytes()
+        val dir = Files.createTempDirectory("tribot-gradle-plugin").toFile()
+        val classDir = dir
+                .resolve("org")
+                .resolve("tribot")
+                .resolve("gradle")
+                .resolve("plugin")
+        classDir.mkdirs()
+        val loginPrompt = classDir.resolve("LoginPrompt.class")
+        loginPrompt.createNewFile()
+        loginPrompt.writeBytes(ui)
+        val openJfx = getTribotDirectory()
+                .resolve("install")
+                .resolve("openjfx")
+                .resolve("javafx-sdk-15")
+                .resolve("lib")
+        if (!openJfx.exists()) {
+            // We could try to resolve through maven or something...
+            throw IllegalStateException("No JavaFX install found. Please run the TRiBot client once to install.")
+        }
+        val process = ProcessBuilder(
+                System.getProperty("java.home") + File.separator + "bin" + File.separator + "java",
+                "--module-path",
+                openJfx.absolutePath,
+                "--add-modules=javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.swing,javafx.media,javafx.web",
+                "org.tribot.gradle.plugin.LoginPrompt",
+        )
+                .directory(dir)
+                .redirectErrorStream(true)
+                .start()
+        try {
+            BufferedReader(InputStreamReader(process.inputStream)).use {
+                return it.lines()
+                        .filter { it != null }
+                        .filter { it.startsWith("Cookies:") }
+                        .map { it.substring(7) }
+                        .findFirst()
+                        .orElseThrow { IllegalStateException("Failed to login") }
+            }
+        }
+        finally {
+            process.destroy()
+        }
+    }
+
+    fun getCookies(): List<Cookie> {
+        return cookies?.split(";")?.map { it.split(":") }?.map { Cookie(it[0], it[1]) } ?: listOf()
+    }
+
+}
+
+data class Cookie(val name: String, val value: String)
