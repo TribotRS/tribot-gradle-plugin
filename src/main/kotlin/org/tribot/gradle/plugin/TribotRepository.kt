@@ -2,7 +2,10 @@ package org.tribot.gradle.plugin
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import okhttp3.*
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,6 +22,7 @@ class TribotRepository {
 
     private val login: TribotLogin = TribotLogin()
     private val cl = OkHttpClient.Builder().addInterceptor {
+        login.loginIfNecessary()
         val original = it.request()
         val authorizedBuilder = original.newBuilder()
         login.getCookies().forEach {
@@ -35,7 +39,11 @@ class TribotRepository {
         authorizedBuilder.header("sec-fetch-mode", "navigate")
         authorizedBuilder.header("sec-fetch-site", "same-origin")
         authorizedBuilder.header("sec-fetch-user", "?1")
-        return@addInterceptor it.proceed(authorizedBuilder.build())
+        val response = it.proceed(authorizedBuilder.build())
+        if (response.code == 404) {
+            login.reset()
+        }
+        return@addInterceptor response
     }.build()
 
     fun getScripts(): List<RepoScript> {
@@ -46,7 +54,6 @@ class TribotRepository {
     }
 
     fun update(id: String, version: String, script: File) {
-        login.loginIfNecessary()
         val requestBody: RequestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
                 .addFormDataPart("file", script.name, script.asRequestBody())
                 .addFormDataPart("version", version)
@@ -65,7 +72,6 @@ class TribotRepository {
     }
 
     private fun load(url: String): String {
-        login.loginIfNecessary()
         val request = Request.Builder().get().url(url).build()
         return cl.newCall(request).execute().use {
             it.body?.string() ?: throw IllegalStateException("No response body for $url")

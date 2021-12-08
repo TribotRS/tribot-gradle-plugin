@@ -3,6 +3,8 @@ package org.tribot.gradle.plugin;
 import javafx.application.Application;
 import javafx.concurrent.Worker;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
@@ -55,9 +57,27 @@ public class LoginPrompt extends Application {
 			                           .stream()
 			                           .map(c -> c.getName() + ":" + c.getValue())
 			                           .collect(Collectors.joining(";"));
-			System.out.println("Cookies:" + cookies);
+			final var loginMultipleTimes = loginMultipleTimes();
+			System.out.println("SaveLogin:" + loginMultipleTimes + ",Cookies:" + cookies);
 		}
 		System.exit(0);
+	}
+
+	private boolean loginMultipleTimes() {
+		final var alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Login Type");
+		alert.setHeaderText("Would you like to save your login?");
+		alert.setContentText("If you are saving your login - make sure to keep your device secure." +
+		                     "It will be saved at .tribot/settings/repo.dat.");
+
+		final var loginOnce = new ButtonType("Login Once");
+		final var saveLogin = new ButtonType("Save Login");
+
+		alert.getButtonTypes().setAll(loginOnce, saveLogin);
+
+		return alert.showAndWait()
+				.map(b -> b == saveLogin)
+				.orElseThrow();
 	}
 
 	public static void main(String[] args) {

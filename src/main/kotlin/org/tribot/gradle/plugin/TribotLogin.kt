@@ -1,15 +1,21 @@
 package org.tribot.gradle.plugin
 
+import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.Files
-
-import org.slf4j.LoggerFactory
+import java.security.MessageDigest
+import java.util.regex.Pattern
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 
 class TribotLogin {
 
+    private val pattern = Pattern.compile("SaveLogin:(?<saveLogin>true|false),Cookies:(?<cookies>.*)")
+
     private val logger = LoggerFactory.getLogger(TribotLogin::class.java)
+    private val cacheFile = getTribotDirectory().resolve("settings").resolve("repo.dat")
 
     private var cookies: String? = null
 
@@ -18,10 +24,80 @@ class TribotLogin {
         if (cookies != null) {
             return
         }
-        cookies = login()
+        cookies = getLoginCookies()
     }
 
-    fun login() : String {
+    @Synchronized
+    fun reset() {
+        cookies = null
+        cacheFile.delete()
+    }
+
+    private fun getLoginCookies() : String {
+        return cacheFile.takeIf { it.exists() }
+                ?.let { readCacheFile() }
+                ?: login()
+    }
+
+    private fun readCacheFile() : String? {
+        return try {
+            getMacAddress()
+                    ?.let {
+                        val bytes = cacheFile.readBytes()
+                        decrypt(bytes, it)
+                    }
+        }
+        catch  (e: Exception) {
+            logger.debug("Failed to read cache file", e)
+            null
+        }
+    }
+
+
+
+    private fun getCipher(key: String, encryptionMode: Boolean): Cipher {
+        val digest = MessageDigest.getInstance("SHA")
+        digest.update(key.toByteArray())
+        val skeySpec = SecretKeySpec(digest.digest(), 0, 16, "AES")
+        val cipher = Cipher.getInstance("AES")
+        if (encryptionMode) {
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec)
+        }
+        else {
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec)
+        }
+        return cipher
+    }
+
+    private fun encrypt(text: String, key: String): ByteArray {
+        val cipher: Cipher = getCipher(key, true)
+        return cipher.doFinal(text.toByteArray())
+    }
+
+    private fun decrypt(textBytes: ByteArray, key: String): String {
+        val cipher: Cipher = getCipher(key, false)
+        return String(cipher.doFinal(textBytes))
+    }
+
+    private fun login() : String {
+        val loginResponse = doLogin()
+        if (loginResponse.saveLogin) {
+            try {
+                getMacAddress()?.let {
+                    cacheFile.parentFile.mkdirs()
+                    cacheFile.createNewFile()
+                    val encrypted = encrypt(loginResponse.cookies, it)
+                    cacheFile.writeBytes(encrypted)
+                }
+            }
+            catch (e: Exception) {
+                logger.debug("Failed to save login", e)
+            }
+        }
+        return loginResponse.cookies
+    }
+
+    private fun doLogin() : LoginResponse {
         // Gradle really doesn't like showing a webview inside the process for some reason - it kept crashing.
         // So we create a new process to isolate it.
         val ui = javaClass.classLoader
@@ -64,8 +140,16 @@ class TribotLogin {
                 return it.lines()
                         .peek { logger.debug("Output from LoginPrompt: $it") }
                         .filter { it != null }
-                        .filter { it.startsWith("Cookies:") }
-                        .map { it.substring(7) }
+                        .filter { it.startsWith("SaveLogin:") }
+                        .map {
+                            val matcher = pattern.matcher(it)
+                            if (!matcher.matches()) {
+                                throw IllegalStateException("Didn't match $it")
+                            }
+                            val saveLogin = matcher.group("saveLogin").toBoolean()
+                            val cookies = matcher.group("cookies")
+                            LoginResponse(cookies, saveLogin)
+                        }
                         .findFirst()
                         .orElseThrow { IllegalStateException("Failed to login") }
             }
@@ -82,3 +166,5 @@ class TribotLogin {
 }
 
 data class Cookie(val name: String, val value: String)
+
+data class LoginResponse(val cookies: String, val saveLogin: Boolean)
