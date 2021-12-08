@@ -80,6 +80,7 @@ class TribotLogin {
     }
 
     private fun login() : String {
+        cacheFile.delete()
         val loginResponse = doLogin()
         if (loginResponse.saveLogin) {
             try {

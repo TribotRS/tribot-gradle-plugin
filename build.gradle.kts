@@ -23,6 +23,7 @@ dependencies {
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10")
     implementation("org.openjfx.javafxplugin:org.openjfx.javafxplugin.gradle.plugin:0.0.10")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("io.freefair.gradle:lombok-plugin:6.3.0")
 }
 
 javafx {

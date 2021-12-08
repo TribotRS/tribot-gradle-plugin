@@ -55,6 +55,8 @@ class TribotPlugin : Plugin<Project> {
                 it.setUrl("https://maven.pkg.jetbrains.space/public/p/compose/dev")
             })
 
+            it.pluginManager.apply("io.freefair.lombok")
+
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
 
             if (it.findProperty("includeClient")?.toString().toBoolean()) {
@@ -142,7 +144,7 @@ class TribotPlugin : Plugin<Project> {
             }
         }
 
-        project.tasks.create("repoCopy") { task ->
+        project.tasks.create("repoPackageAll") { task ->
             task.group = "tribot"
             project.subprojects.forEach {
                 it.tasks.getByName("build").let { task.dependsOn(it) }
@@ -177,7 +179,7 @@ class TribotPlugin : Plugin<Project> {
         val repoPackage = project.tasks.create("repoPackage") { task ->
             task.group = "tribot"
             task.dependsOn(project.tasks.getByName("assemble"))
-            root.tasks.getByName("repoCopy").dependsOn(task)
+            root.tasks.getByName("repoPackageAll").dependsOn(task)
             task.doLast {
 
                 val projectDir = project.projectDir
