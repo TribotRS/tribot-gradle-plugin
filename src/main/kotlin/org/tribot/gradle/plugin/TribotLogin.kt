@@ -10,6 +10,7 @@ class TribotLogin {
 
     private var cookies: String? = null
 
+    @Synchronized
     fun loginIfNecessary() {
         if (cookies != null) {
             return
@@ -17,7 +18,6 @@ class TribotLogin {
         cookies = login()
     }
 
-    @Synchronized
     fun login() : String {
         // Gradle really doesn't like showing a webview inside the process for some reason - it kept crashing.
         // So we create a new process to isolate it.
