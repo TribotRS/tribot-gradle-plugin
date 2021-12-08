@@ -5,8 +5,11 @@ import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.Files
 
+import org.slf4j.LoggerFactory
 
 class TribotLogin {
+
+    private val logger = LoggerFactory.getLogger(TribotLogin::class.java)
 
     private var cookies: String? = null
 
@@ -56,6 +59,7 @@ class TribotLogin {
         try {
             BufferedReader(InputStreamReader(process.inputStream)).use {
                 return it.lines()
+                        .peek { logger.debug("Output from LoginPrompt: $it") }
                         .filter { it != null }
                         .filter { it.startsWith("Cookies:") }
                         .map { it.substring(7) }

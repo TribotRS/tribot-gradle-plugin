@@ -1,6 +1,7 @@
 package org.tribot.gradle.plugin
 
 import com.google.gson.Gson
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -19,6 +20,8 @@ class TribotSplash {
     private val jarName = "tribot-splash.jar"
     private val lockFile: String = getTribotDirectory().absolutePath + File.separator + "tribot-splash.lock"
 
+    private val logger = LoggerFactory.getLogger(TribotSplash::class.java)
+
     val filePath: String = getTribotDirectory().absolutePath + File.separator + jarName
 
     private val httpClient: HttpClient = HttpClient.newHttpClient();
@@ -28,14 +31,14 @@ class TribotSplash {
             tmp.channel.lock() // this will be unlocked when tmp is automatically closed
             val file = getSplashJarFile()
             val local = getLocalHash()
-            println("TRiBot splash hash: " + file.hash + "; local file hash: " + local)
+            logger.debug("TRiBot splash hash: " + file.hash + "; local file hash: " + local)
             if (file.hash != local) {
-                println("Attempting to update local tribot-splash.jar")
+                logger.debug("Attempting to update local tribot-splash.jar")
                 download(file)
-                println("Updated tribot-splash.jar")
+                logger.debug("Updated tribot-splash.jar")
             }
             else {
-                println("TRiBot splash is up-to-date")
+                logger.debug("TRiBot splash is up-to-date")
             }
         }
     }

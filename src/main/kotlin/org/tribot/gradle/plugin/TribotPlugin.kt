@@ -87,7 +87,7 @@ class TribotPlugin : Plugin<Project> {
                         Files.delete(it.toPath())
                     }
                     catch (e: IOException) {
-                        println("Warning: Failed to delete file ${it.absolutePath}: ${e.message}")
+                        project.logger.warn("Warning: Failed to delete file ${it.absolutePath}: ${e.message}")
                     }
                 }
             }

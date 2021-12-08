@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import okhttp3.*
 import okhttp3.RequestBody.Companion.asRequestBody
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 
 
@@ -12,6 +14,8 @@ class TribotRepository {
     companion object {
         val instance: TribotRepository by lazy { TribotRepository() }
     }
+
+    private val logger: Logger = LoggerFactory.getLogger(TribotRepository::class.java)
 
     private val login: TribotLogin = TribotLogin()
     private val cl = OkHttpClient.Builder().addInterceptor {
@@ -25,6 +29,7 @@ class TribotRepository {
 
     fun getScripts(): List<RepoScript> {
         val scriptData = load("https://repo.tribot.org/data/scripter_panel/published_scripts?_=" + System.currentTimeMillis())
+        logger.debug("getScripts response: $scriptData")
         val scripts = Gson().fromJson(scriptData, RepoScripts::class.java)
         return scripts.scripts
     }
@@ -41,7 +46,7 @@ class TribotRepository {
                 .build()
         cl.newCall(request).execute().use {
             if (it.code != 200) {
-                throw IllegalStateException("Failed to update script $id")
+                throw IllegalStateException("Failed to update script $id, response code: ${it.code}")
             }
         }
     }
