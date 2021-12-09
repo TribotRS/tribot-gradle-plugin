@@ -53,8 +53,6 @@ class TribotLogin {
         }
     }
 
-
-
     private fun getCipher(key: String, encryptionMode: Boolean): Cipher {
         val digest = MessageDigest.getInstance("SHA")
         digest.update(key.toByteArray())
