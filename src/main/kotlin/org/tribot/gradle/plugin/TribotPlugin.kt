@@ -14,6 +14,8 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
+import kotlin.math.max
+import kotlin.math.min
 
 class TribotPlugin : Plugin<Project> {
 
@@ -31,6 +33,8 @@ class TribotPlugin : Plugin<Project> {
         val outputDir = getTribotDirectory().resolve("bin")
 
         project.allprojects.forEach {
+
+            val currentProject = it
 
             it.configurations.all {
                 // Ensures that our dependencies will update timely
@@ -83,17 +87,6 @@ class TribotPlugin : Plugin<Project> {
             main.resources.setSrcDirs(listOf("src"))
             main.resources.exclude("**/*.java", "**/*.kt")
 
-            it.tasks.getAt("clean").doFirst {
-                outputDir.walkBottomUp().forEach {
-                    try {
-                        Files.delete(it.toPath())
-                    }
-                    catch (e: IOException) {
-                        project.logger.warn("Warning: Failed to delete file ${it.absolutePath}: ${e.message}")
-                    }
-                }
-            }
-
             // Gradle doesn't like multiple projects pointing to the same output location, so copy the files we need
             it.tasks.getAt("classes").doLast { _ ->
                 val copy = {f : File ->
@@ -103,7 +96,12 @@ class TribotPlugin : Plugin<Project> {
                         it.walkTopDown().filter { !it.isDirectory }.forEach { classFile ->
                             val outputPathSegment = outputDir.resolve("scripts").absolutePath
                             val outputFile = File(classFile.absolutePath.replace(it.absolutePath, outputPathSegment))
-                            classFile.copyTo(outputFile, true)
+                            try {
+                                Files.copy(classFile.toPath(), outputFile.outputStream())
+                            }
+                            catch (e: IOException) {
+                                currentProject.logger.warn("Failed to copy $classFile to tribot bin: ${e.message}")
+                            }
                         }
                     }
                 }
@@ -126,7 +124,8 @@ class TribotPlugin : Plugin<Project> {
 
         project.tasks.create("runTribotWithDebugger") { task ->
             task.group = "tribot"
-
+            task.description = "Launches a client with remote debugging enabled. Intended to be used by " +
+                    "the gradle template Debug TRiBot IntelliJ run task."
             task.doLast {
                 val splash = TribotSplash()
                 splash.ensureUpdated()
@@ -146,6 +145,8 @@ class TribotPlugin : Plugin<Project> {
 
         project.tasks.create("repoPackageAll") { task ->
             task.group = "tribot"
+            task.description = "Packages all scripts into a .zip file and places them in " +
+                    "projectDirectory/build/repo-deploy"
             project.subprojects.forEach {
                 it.tasks.getByName("build").let { task.dependsOn(it) }
             }
@@ -162,7 +163,23 @@ class TribotPlugin : Plugin<Project> {
 
         project.tasks.create("repoUpdateAll") { task ->
             task.group = "tribot"
+            task.description = "Packages and updates all scripts on the repository"
             // We have all the script repo updates depend on this
+        }
+
+        project.tasks.create("cleanBin") { task ->
+            task.group = "tribot"
+            task.description = "Removes all files in the tribot/bin directory"
+            task.doLast {
+                outputDir.walkBottomUp().forEach {
+                    try {
+                        Files.delete(it.toPath())
+                    }
+                    catch (e: IOException) {
+                        project.logger.warn("Failed to delete ${it.absolutePath}: ${e.message}")
+                    }
+                }
+            }
         }
     }
 
@@ -178,6 +195,7 @@ class TribotPlugin : Plugin<Project> {
         val root = getRoot(project)
         val repoPackage = project.tasks.create("repoPackage") { task ->
             task.group = "tribot"
+            task.description = "Packages the script into a zip file in scriptDirectory/build/repo-deploy"
             task.dependsOn(project.tasks.getByName("assemble"))
             root.tasks.getByName("repoPackageAll").dependsOn(task)
             task.doLast {
@@ -218,20 +236,41 @@ class TribotPlugin : Plugin<Project> {
         project.tasks.create("repoUpdate") {
             it.group = "tribot"
             it.dependsOn(repoPackage)
+            it.description = "Packages and uploads the script to the repository"
             root.tasks.getByName("repoUpdateAll").dependsOn(it)
             it.doLast {
                 val localFile = it.project.projectDir
                         .resolve("build/repo-deploy")
                         .takeIf { it.exists() }
                         ?.let { it.listFiles()?.getOrNull(0) }
-                        ?: throw IllegalStateException("Failed to find build script ${project.name}")
+                        ?: throw IllegalStateException("Failed to find built script ${project.name}")
                 val tribotScripts = TribotRepository.instance.getScripts()
                 val scripts = project.properties["repoId"]?.toString()?.let {
                     val ids = it.split(",")
                     tribotScripts.filter { ids.contains(it.id) }.takeIf { it.isNotEmpty() }
                 }
                 ?: throw IllegalStateException("No existing script found for ${project.name} with repoId ${project.properties["repoId"]}")
-                scripts.forEach { TribotRepository.instance.update(it.id, it.version, localFile) }
+                fun getVersion(script: RepoScript) : String {
+                    // See the gradle template readme section on versioning
+                    val version = project.findProperty("scriptVersion")
+                    if (version != null) {
+                        return version.toString()
+                    }
+                    val scriptVersion = script.version.toDoubleOrNull();
+                    val base = project.findProperty("scriptBaseVersion")?.toString()?.toDoubleOrNull()
+                    val increment = project.findProperty("scriptVersionIncrement")?.toString()?.toDoubleOrNull()
+                    if (scriptVersion != null && increment != null) {
+                        if (base != null) {
+                            if (base > scriptVersion) {
+                                return base.toString()
+                            }
+                            return (scriptVersion + increment).toString()
+                        }
+                        return (scriptVersion + increment).toString()
+                    }
+                    return script.version
+                }
+                scripts.forEach { TribotRepository.instance.update(it.id, getVersion(it), localFile) }
             }
         }
     }
