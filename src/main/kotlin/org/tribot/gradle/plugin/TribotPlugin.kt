@@ -259,13 +259,10 @@ class TribotPlugin : Plugin<Project> {
                     val scriptVersion = script.version.toDoubleOrNull();
                     val base = project.findProperty("scriptBaseVersion")?.toString()?.toDoubleOrNull()
                     val increment = project.findProperty("scriptVersionIncrement")?.toString()?.toDoubleOrNull()
+                    if (base != null && scriptVersion != null && base > scriptVersion) {
+                        return base.toString()
+                    }
                     if (scriptVersion != null && increment != null) {
-                        if (base != null) {
-                            if (base > scriptVersion) {
-                                return base.toString()
-                            }
-                            return (scriptVersion + increment).toString()
-                        }
                         return (scriptVersion + increment).toString()
                     }
                     return script.version
