@@ -96,11 +96,12 @@ class TribotPlugin : Plugin<Project> {
                         it.walkTopDown().filter { !it.isDirectory }.forEach { classFile ->
                             val outputPathSegment = outputDir.resolve("scripts").absolutePath
                             val outputFile = File(classFile.absolutePath.replace(it.absolutePath, outputPathSegment))
+                            outputFile.parentFile?.mkdirs();
                             try {
                                 Files.copy(classFile.toPath(), outputFile.outputStream())
                             }
                             catch (e: IOException) {
-                                currentProject.logger.warn("Failed to copy $classFile to tribot bin: ${e.message}")
+                                currentProject.logger.warn("Failed to copy $classFile to tribot bin: ${e} ${e.message}")
                             }
                         }
                     }
@@ -147,9 +148,8 @@ class TribotPlugin : Plugin<Project> {
             task.group = "tribot"
             task.description = "Packages all scripts into a .zip file and places them in " +
                     "projectDirectory/build/repo-deploy"
-            project.subprojects.forEach {
-                it.tasks.getByName("build").let { task.dependsOn(it) }
-            }
+            // When creating each script's repoPackage task, we find and update the repoPackageAll task to depend on
+            // it later. This ensures the files are always available.
             task.doLast {
                 val repoDeployDir = task.project.projectDir.resolve("build/repo-deploy").also { it.mkdirs() }
                 task.project.allprojects
@@ -196,7 +196,7 @@ class TribotPlugin : Plugin<Project> {
         val repoPackage = project.tasks.create("repoPackage") { task ->
             task.group = "tribot"
             task.description = "Packages the script into a zip file in scriptDirectory/build/repo-deploy"
-            task.dependsOn(project.tasks.getByName("assemble"))
+            task.dependsOn(project.tasks.getByName("classes"))
             root.tasks.getByName("repoPackageAll").dependsOn(task)
             task.doLast {
 
