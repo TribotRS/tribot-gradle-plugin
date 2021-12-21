@@ -64,7 +64,18 @@ class TribotPlugin : Plugin<Project> {
             it.dependencies.add("api", "org.tribot:tribot-script-sdk:+")
 
             if (it.findProperty("includeClient")?.toString().toBoolean()) {
-                it.dependencies.add("api", "org.tribot:tribot-client:+")
+                val tribotJar = getTribotDirectory()
+                        .resolve("install")
+                        .resolve("tribot-client")
+                        .resolve("lib")
+                        .listFiles { dir, name -> name.matches("tribot-client-.*\\.jar".toRegex()) }
+                        ?.first()
+                if (tribotJar != null) {
+                    it.dependencies.add("api", it.files(tribotJar))
+                }
+                else {
+                    it.dependencies.add("api", "org.tribot:tribot-client:+")
+                }
             }
 
             // Add/check allatori - we only check the length to verify integrity before copying, this will be sufficient
@@ -101,7 +112,7 @@ class TribotPlugin : Plugin<Project> {
                                 Files.copy(classFile.toPath(), outputFile.outputStream())
                             }
                             catch (e: IOException) {
-                                currentProject.logger.warn("Failed to copy $classFile to tribot bin: ${e} ${e.message}")
+                                currentProject.logger.warn("Failed to copy $classFile to tribot bin: $e ${e.message}")
                             }
                         }
                     }
