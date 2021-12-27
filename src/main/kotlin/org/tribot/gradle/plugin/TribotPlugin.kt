@@ -78,6 +78,10 @@ class TribotPlugin : Plugin<Project> {
                 }
             }
 
+            if (it.findProperty("includeDaxWalker")?.toString().toBoolean()) {
+                it.dependencies.add("compileOnly", "org.tribot:tribot-dax-walker:0.0.7")
+            }
+
             // Add/check allatori - we only check the length to verify integrity before copying, this will be sufficient
             val allatoriOnDisk = getTribotDirectory().resolve("thirdparty").resolve("allatori-annotations-7.5.jar")
             val allatoriResource = javaClass.classLoader.getResourceAsStream("allatori-annotations-7.5.jar")!!.readAllBytes()
