@@ -74,7 +74,7 @@ class TribotPlugin : Plugin<Project> {
                     it.dependencies.add("api", it.files(tribotJar))
                 }
                 else {
-                    it.dependencies.add("api", "org.tribot:legacy-client:+")
+                    it.dependencies.add("api", "org.tribot:tribot-client:+")
                 }
             }
 
