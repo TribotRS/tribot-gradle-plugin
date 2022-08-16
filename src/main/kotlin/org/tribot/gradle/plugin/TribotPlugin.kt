@@ -68,8 +68,8 @@ class TribotPlugin : Plugin<Project> {
                         .resolve("install")
                         .resolve("tribot-client")
                         .resolve("lib")
-                        .listFiles { dir, name -> name.matches("tribot-client-.*\\.jar".toRegex()) }
-                        ?.first()
+                        .listFiles { dir, name -> name.matches("legacy-client-.*\\.jar".toRegex()) }
+                        ?.firstOrNull()
                 if (tribotJar != null) {
                     it.dependencies.add("api", it.files(tribotJar))
                 }
