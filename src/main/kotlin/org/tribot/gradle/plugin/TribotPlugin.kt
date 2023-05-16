@@ -79,7 +79,7 @@ class TribotPlugin : Plugin<Project> {
             }
 
             if (it.findProperty("includeDaxWalker")?.toString().toBoolean()) {
-                it.dependencies.add("compileOnly", "org.tribot:tribot-dax-walker:0.0.7")
+                it.dependencies.add("compileOnly", "org.tribot:tribot-dax-walker:+")
             }
 
             // Add/check allatori - we only check the length to verify integrity before copying, this will be sufficient
